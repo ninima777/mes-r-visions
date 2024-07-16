@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avancement et Rendement</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>Avancement dans les matières</h2>
+    <canvas id="progressChart" width="400" height="200"></canvas>
+
+    <h2>Rendement final</h2>
+    <canvas id="finalPerformanceChart" width="400" height="200"></canvas>
+
+    <h2>Mise à jour de l'avancement</h2>
+    <form id="updateForm">
+        <label for="subject">Matière:</label>
+        <select id="subject" name="subject">
+            <option value="0">MATH2</option>
+            <option value="1">biblio</option>
+            <option value="2">bota</option>
+            <option value="3">spectro</option>
+            <option value="4">Anatomie</option>
+            <option value="5">biochimie meta</option>
+            <option value="6">bio mol</option>
+            <option value="7">STAT2</option>
+            <option value="8">chimie orga2</option>
+        </select>
+        <label for="percentage">Pourcentage:</label>
+        <input type="number" id="percentage" name="percentage" min="0" max="100">
+        <button type="button" onclick="updateProgress()">Mettre à jour</button>
+    </form>
+
+    <h2>Registre des avancements</h2>
+    <ul id="progressLog"></ul>
+
+    <script>
+        const progressCtx = document.getElementById('progressChart').getContext('2d');
+        const progressChart = new Chart(progressCtx, {
+            type: 'bar',
+            data: {
+                labels: ['MATH2', 'biblio', 'bota', 'spectro', 'Anatomie', 'biochimie meta', 'bio mol', 'STAT2', 'chimie orga2'],
+                datasets: [{
+                    label: 'Avancement (%)',
+                    data: [0, 0, 0, 0, 0, 0, 0, 0, 0],  // Remplacez les valeurs par votre avancement en pourcentage
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        const finalCtx = document.getElementById('finalPerformanceChart').getContext('2d');
+        const finalPerformanceChart = new Chart(finalCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Rendement (%)'],
+                datasets: [{
+                    label: 'Rendement final',
+                    data: [0, 100],  // Le premier élément est le rendement, le second est 100 - rendement pour compléter le cercle
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 99, 132, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataIndex === 0) {
+                                    return `Rendement: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        function updateProgress() {
+            const subjectIndex = document.getElementById('subject').value;
+            const percentage = document.getElementById('percentage').value;
+            const subject = document.getElementById('subject').options[subjectIndex].text;
+            const date = new Date().toLocaleString();
+
+            // Mettre à jour le graphique d'avancement
+            progressChart.data.datasets[0].data[subjectIndex] = percentage;
+            progressChart.update();
+
+            // Calculer le rendement final
+            const totalProgress = progressChart.data.datasets[0].data.reduce((a, b) => parseInt(a) + parseInt(b), 0);
+            const finalPercentage = totalProgress / progressChart.data.datasets[0].data.length;
+
+            // Mettre à jour le graphique de rendement final
+            finalPerformanceChart.data.datasets[0].data[0] = finalPercentage;
+            finalPerformanceChart.data.datasets[0].data[1] = 100 - finalPercentage;
+            finalPerformanceChart.update();
+
+            // Enregistrer l'avancement dans le registre
+            const logEntry = `${date} - ${subject}: ${percentage}%`;
+            const progressLog = document.getElementById('progressLog');
+            const logItem = document.createElement('li');
+            logItem.textContent = logEntry;
+            progressLog.appendChild(logItem);
+
+            // Sauvegarder l'entrée dans le stockage local
+            let logEntries = JSON.parse(localStorage.getItem('progressLog')) || [];
+            logEntries.push(logEntry);
+            localStorage.setItem('progressLog', JSON.stringify(logEntries));
+        }
+
+        // Charger le registre des avancements à partir du stockage local
+        window.onload = function() {
+            const progressLog = document.getElementById('progressLog');
+            const logEntries = JSON.parse(localStorage.getItem('progressLog')) || [];
+            logEntries.forEach(entry => {
+                const logItem = document.createElement('li');
+                logItem.textContent = entry;
+                progressLog.appendChild(logItem);
+            });
+        }
+    </script>
+</body>
+</html>
